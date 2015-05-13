@@ -1,8 +1,23 @@
 import json
 
-from PySide.QtCore import QProcess
-from PySide.QtGui import QColor, QFont
+from PySide.QtCore import QProcess, Qt
+from PySide.QtGui import QColor, QFont, QPixmap, QWidget, QPainter, QLabel
 
+class ImageWidget(QLabel):
+
+	def __init__(self, imagePath, parent):
+		super(ImageWidget, self).__init__(parent)
+		picture = QPixmap(imagePath)
+		self.setAlignment(Qt.AlignCenter)
+		self.setPixmap(picture)
+
+class MovieWidget(QWidget):
+
+	def __init__(self, moviePath, parent):
+		super(MovieWidget, self).__init__(parent)
+		movie = QMovie(moviePath)
+		self.setMovie(movie)
+		movie.start()
 
 class Stream:
 
@@ -45,8 +60,11 @@ class Stream:
 		process.start( 'livestreamer', arguments )
 		process.readyReadStandardOutput.connect( self.is_online_callback )
 
-		tableWidgetItem.setForeground(QColor(0,0,0))
-		tableWidgetItem.setText( 'Checking..' )
+		#~ tableWidgetItem.setForeground(QColor(0,0,0))
+		#~ tableWidgetItem.setText( 'Checking..' )
+		itemWidget = self.table_widget_item
+		tableWidget = itemWidget.tableWidget()
+		tableWidget.setCellWidget( itemWidget.row(), itemWidget.column(), ImageWidget('icons/loading_16.png', tableWidget) )
 
 		Stream.ALL_STREAMS.append( self )
 
@@ -66,17 +84,20 @@ class Stream:
 
 
 		itemWidget = self.table_widget_item
+		tableWidget = itemWidget.tableWidget()
 
 		if outputObject.get( 'error' ):
-			itemWidget.setForeground(QColor(255,0,0))
+			tableWidget.setCellWidget( itemWidget.row(), itemWidget.column(), ImageWidget('icons/offline_16.png', tableWidget) )
+			#~ itemWidget.setForeground(QColor(255,0,0))
 			onlineStatus = 'Offline'
 		else:
-			itemWidget.setForeground(QColor(0,200,0))
+			tableWidget.setCellWidget( itemWidget.row(), itemWidget.column(), ImageWidget('icons/online_16.png', tableWidget) )
+			#~ itemWidget.setForeground(QColor(0,200,0))
 			onlineStatus = 'Online'
 
 
 
-		itemWidget.setText( onlineStatus )
+		#~ itemWidget.setText( onlineStatus )
 
 
 	def show_messages( self ):

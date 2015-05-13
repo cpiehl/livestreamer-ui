@@ -3,7 +3,8 @@
 import sys
 import json
 
-from PySide.QtGui import QApplication, QLabel, QPushButton, QLineEdit, QWidget, QTextEdit, QGridLayout, QTableWidget, QTableWidgetItem, QHeaderView
+#~ from PySide.QtGui import QApplication, QLabel, QPushButton, QLineEdit, QWidget, QTextEdit, QGridLayout, QTableWidget, QTableWidgetItem, QHeaderView, QAbstractItemView, QMenu
+from PySide.QtGui import *
 from PySide.QtCore import Qt
 
 from stream import Stream
@@ -15,26 +16,39 @@ try:
 except NameError:
 	TryFileNotFound = IOError
 
-class LiveStreamer:
+class LiveStreamer( QWidget ):
 
 	def __init__( self ):
+		super(LiveStreamer, self).__init__()
 
 		url = QLineEdit()
 		urlLabel = QLabel( 'Url' )
 		messages = QTextEdit()
 		messagesLabel = QLabel( 'Messages' )
 		links = QTableWidget( 0, 2 )
-		linksLabel = QLabel( 'Links' )
 		clearMessages = QPushButton( 'Clear Messages' )
-		checkIfOnline = QPushButton( 'Check If Online' )
-		addSelectedLink = QPushButton( 'Add Link' )
-		removeSelectedLink = QPushButton( 'Remove Selected Link' )
+		checkIfOnline = QPushButton( QIcon( QPixmap( 'icons/reload_16.png' ) ), '' )
+		addLink = QPushButton( QIcon( QPixmap( 'icons/add_16.png' ) ), '' )
+
+			# make it pretty
+		links.horizontalHeader().hide()
+		links.verticalHeader().hide()
+		links.setShowGrid(False)
+		links.setSelectionBehavior(QAbstractItemView.SelectRows)
+		checkIfOnline.setMaximumWidth(32)
+		addLink.setMaximumWidth(32)
+
+			# add right click context menu
+		links.setContextMenuPolicy(Qt.CustomContextMenu)
+		links.customContextMenuRequested.connect(self.links_context_menu)
+
+		#~ linksLabel.setMaximumHeight( 20 )
 
 		messages.setReadOnly( True )
 
-		links.setHorizontalHeaderLabels( [ 'Url', 'Status' ] )
-		links.horizontalHeader().setResizeMode( QHeaderView.Stretch )
-		links.horizontalHeader().setResizeMode( 1, QHeaderView.Fixed )
+		links.setHorizontalHeaderLabels( [ 'Status', 'Url' ] )
+		links.horizontalHeader().setResizeMode( 0, QHeaderView.ResizeToContents )
+		links.horizontalHeader().setResizeMode( 1, QHeaderView.Stretch )
 
 			# set the events
 
@@ -42,37 +56,24 @@ class LiveStreamer:
 		links.itemDoubleClicked.connect( self.select_stream_from_link )
 		clearMessages.clicked.connect( self.clear_messages )
 		checkIfOnline.clicked.connect( self.check_if_online )
-		addSelectedLink.clicked.connect( self.add_selected_link )
-		removeSelectedLink.clicked.connect( self.remove_selected_link )
+		addLink.clicked.connect( self.add_link_dialog )
 
 			# set the layouts
-
 		mainLayout = QGridLayout()
 
-			# first row
-		mainLayout.addWidget( urlLabel, 0, 0, 1, 2 )    # spans 2 columns
-		mainLayout.addWidget( linksLabel, 0, 2, 1, 3 )  # spans 3 columns
-
-			# second row  (links widget occupies 2 rows and 2 columns)
-		mainLayout.addWidget( url, 1, 0, 1, 2 )         # spans 2 columns
-		mainLayout.addWidget( links, 1, 2, 2, 3 )   # spans 3 columns
-
-			# third row (messages widget occupies 2 columns)
-		mainLayout.addWidget( messages, 2, 0, 1, 2 )
+			# first row  (links widget occupies 3 rows and 3 columns)
+		mainLayout.addWidget( links, 0, 0, 3, 3 )   # spans 3 columns
 
 			# fourth row
-		mainLayout.addWidget( messagesLabel, 3, 0 )
-		mainLayout.addWidget( clearMessages, 3, 1 )
-		mainLayout.addWidget( checkIfOnline, 3, 2 )
-		mainLayout.addWidget( addSelectedLink, 3, 3 )
-		mainLayout.addWidget( removeSelectedLink, 3, 4 )
+		mainLayout.addWidget( checkIfOnline, 3, 1 )
+		mainLayout.addWidget( addLink, 3, 2 )
 
 
 		window = QWidget()
 
 		window.setLayout( mainLayout )
 		window.setWindowTitle( 'Live Streamer' )
-		window.resize( 700, 350 )
+		window.resize( 400, 350 )
 		window.show()
 
 		self.url_ui = url
@@ -82,6 +83,24 @@ class LiveStreamer:
 
 		self.links = set()
 
+	def links_context_menu( self, pos ):
+		menu = QMenu()
+		playAction = menu.addAction( QIcon( QPixmap( 'icons/play_16.png' ) ), "Watch" )
+		reloadAction = menu.addAction( QIcon( QPixmap( 'icons/reload_16.png' ) ), "Reload" )
+		removeAction = menu.addAction( QIcon( QPixmap( 'icons/remove_16.png' ) ), "Remove" )
+		action = menu.exec_( self.links_ui.mapToGlobal( pos ) )
+		if action == playAction:
+			self.select_stream_from_link( self.links_ui.currentItem() )
+		elif action == reloadAction:
+			self.reload_selected_link()
+		elif action == removeAction:
+			self.remove_selected_link()
+
+	def add_link_dialog( self ):
+		text, ok = QInputDialog.getText( self, 'Add Link', 'URL:' )
+
+		if ok:
+			self.add_link( text )
 
 	def select_stream_from_entry( self ):
 
@@ -103,7 +122,7 @@ class LiveStreamer:
 
 		row = tableWidgetItem.row()
 
-		urlItem = self.links_ui.item( row, 0 )  # the url is in the first column
+		urlItem = self.links_ui.item( row, 1 )  # the url is in the first column
 
 		url = urlItem.text()
 
@@ -147,11 +166,11 @@ class LiveStreamer:
 
 			statusEntry.setTextAlignment( Qt.AlignCenter )
 
-			urlEntry.setFlags( urlEntry.flags() & ~Qt.ItemIsEditable ) # not editable
 			statusEntry.setFlags( statusEntry.flags() & ~Qt.ItemIsEditable ) # not editable
+			urlEntry.setFlags( urlEntry.flags() & ~Qt.ItemIsEditable ) # not editable
 
-			self.links_ui.setItem( nextPosition, 0, urlEntry )
-			self.links_ui.setItem( nextPosition, 1, statusEntry )
+			self.links_ui.setItem( nextPosition, 0, statusEntry )
+			self.links_ui.setItem( nextPosition, 1, urlEntry )
 
 
 				# check if online
@@ -182,6 +201,17 @@ class LiveStreamer:
 			self.links_ui.removeRow( currentRow )
 
 
+	def reload_selected_link( self ):
+
+		statusItem = self.links_ui.item( self.links_ui.currentRow(), 0 )
+		urlItem = self.links_ui.item( self.links_ui.currentRow(), 1 )
+
+		url = urlItem.text()
+		splitUrl = url.split()
+		stream = Stream( splitUrl )
+
+		stream.is_online( statusItem )
+
 
 	def check_if_online( self ):
 
@@ -191,8 +221,8 @@ class LiveStreamer:
 
 		for row in range( self.links_ui.rowCount() ):
 
-			urlItem = self.links_ui.item( row, 0 )
-			statusItem = self.links_ui.item( row, 1 )
+			statusItem = self.links_ui.item( row, 0 )
+			urlItem = self.links_ui.item( row, 1 )
 
 			url = urlItem.text()
 
