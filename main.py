@@ -12,9 +12,9 @@ from stream import Stream
 	# FileNotFoundError is python3.3+ only
 try:
 	TryFileNotFound = FileNotFoundError
-
 except NameError:
 	TryFileNotFound = IOError
+
 
 class LiveStreamer( QWidget ):
 
@@ -42,8 +42,6 @@ class LiveStreamer( QWidget ):
 		links.setContextMenuPolicy(Qt.CustomContextMenu)
 		links.customContextMenuRequested.connect(self.links_context_menu)
 
-		#~ linksLabel.setMaximumHeight( 20 )
-
 		messages.setReadOnly( True )
 
 		links.setHorizontalHeaderLabels( [ 'Status', 'Url' ] )
@@ -51,7 +49,6 @@ class LiveStreamer( QWidget ):
 		links.horizontalHeader().setResizeMode( 1, QHeaderView.Stretch )
 
 			# set the events
-
 		url.returnPressed.connect( self.select_stream_from_entry )
 		links.itemDoubleClicked.connect( self.select_stream_from_link )
 		clearMessages.clicked.connect( self.clear_messages )
@@ -109,32 +106,21 @@ class LiveStreamer( QWidget ):
 		"""
 		url = self.url_ui.text()
 		split_url = url.split()
-
 		self.messages_ui.append( 'Trying to open stream: {}'.format( url ) )
-
 		stream = Stream( split_url )
-
 		stream.start( self.messages_ui )
-
 
 
 	def select_stream_from_link( self, tableWidgetItem ):
 
 		row = tableWidgetItem.row()
-
 		urlItem = self.links_ui.item( row, 1 )  # the url is in the first column
-
 		url = urlItem.text()
-
 		split_url = url.split()
-
 		self.messages_ui.append( 'Trying to open stream: {}'.format( url ) )
 
-
 		stream = Stream( split_url )
-
 		stream.start( self.messages_ui )
-
 
 
 	def clear_messages( self ):
@@ -154,7 +140,6 @@ class LiveStreamer( QWidget ):
 
 			self.links.add( url )
 
-
 			rowCounts = self.links_ui.rowCount()
 			nextRow = rowCounts + 1
 			nextPosition = rowCounts    # row count is the length, but position is zero-based
@@ -172,31 +157,24 @@ class LiveStreamer( QWidget ):
 			self.links_ui.setItem( nextPosition, 0, statusEntry )
 			self.links_ui.setItem( nextPosition, 1, urlEntry )
 
-
 				# check if online
 			stream = Stream( url.split() )
 
 			stream.is_online( statusEntry )
 
 
-
 	def add_selected_link( self ):
 
 		url = self.url_ui.text()
-
 		if url:
-
 			self.add_link( url )
 
 
 	def remove_selected_link( self ):
 
 		selectedItem = self.links_ui.currentItem()
-
 		if selectedItem:
-
 			self.links.remove( selectedItem.text() )
-
 			currentRow = self.links_ui.currentRow()
 			self.links_ui.removeRow( currentRow )
 
@@ -225,15 +203,9 @@ class LiveStreamer( QWidget ):
 			urlItem = self.links_ui.item( row, 1 )
 
 			url = urlItem.text()
-
 			splitUrl = url.split()
-
 			stream = Stream( splitUrl )
-
 			stream.is_online( statusItem )
-
-
-
 
 
 	def save( self ):
@@ -244,9 +216,7 @@ class LiveStreamer( QWidget ):
 
 			# json doesn't have sets, so convert to a list
 		linksList = list( self.links )
-
 		saveJsonText = json.dumps( linksList )
-
 		with open( 'data.txt', 'w', encoding= 'utf-8' ) as f:
 			f.write( saveJsonText )
 
@@ -259,35 +229,23 @@ class LiveStreamer( QWidget ):
 
 		try:
 			file = open( 'data.txt', 'r', encoding= 'utf-8' )
-
 		except TryFileNotFound:
 			return
 
-
 		linksList = json.loads( file.read() )
-
 		file.close()
-
 
 		for link in linksList:
 			self.add_link( link )
 
-
 		self.check_if_online()
-
 
 
 if __name__ == '__main__':
 
 	app = QApplication( sys.argv )
-
 	streamer = LiveStreamer()
-
 	streamer.load()
-
 	app.aboutToQuit.connect( streamer.save )
-
 	app.exec_()
-
-
 

@@ -1,7 +1,7 @@
 import json
 
 from PySide.QtCore import QProcess, Qt
-from PySide.QtGui import QColor, QFont, QPixmap, QWidget, QPainter, QLabel
+from PySide.QtGui import *
 
 class ImageWidget(QLabel):
 
@@ -11,11 +11,12 @@ class ImageWidget(QLabel):
 		self.setAlignment(Qt.AlignCenter)
 		self.setPixmap(picture)
 
-class MovieWidget(QWidget):
+class MovieWidget(QLabel):
 
 	def __init__(self, moviePath, parent):
 		super(MovieWidget, self).__init__(parent)
 		movie = QMovie(moviePath)
+		self.setAlignment(Qt.AlignCenter)
 		self.setMovie(movie)
 		movie.start()
 
@@ -64,7 +65,7 @@ class Stream:
 		#~ tableWidgetItem.setText( 'Checking..' )
 		itemWidget = self.table_widget_item
 		tableWidget = itemWidget.tableWidget()
-		tableWidget.setCellWidget( itemWidget.row(), itemWidget.column(), ImageWidget('icons/loading_16.png', tableWidget) )
+		tableWidget.setCellWidget( itemWidget.row(), itemWidget.column(), MovieWidget('icons/loading_16.gif', tableWidget) )
 
 		Stream.ALL_STREAMS.append( self )
 
