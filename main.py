@@ -4,12 +4,16 @@
 # --Quality selection combobox bottom mid
 # --Watch button bottom left
 # --JSON saving more than URLs
-# Save window size
-# Edit entries
+# --Save window size
+# --Edit entries
+# Ordered save urls
 # Aliases
 # Stream error handling, statusbar maybe?
 #    no stream in selected quality, etc
 # Hosting someone else's stream?
+# User selectable media player
+# Menubar File->Add,Open,Reload,Exit;View->messages.log,Preferences,About
+# Preferences check_if_online on startup, media player path, hide url domain
 
 
 import os, sys
@@ -19,7 +23,7 @@ import json
 from PySide.QtGui import *
 from PySide.QtCore import Qt
 
-from stream import Stream
+from stream import *
 
 # changes relative into full path so we can run from anywhere
 def fullpath( relpath ):
@@ -93,7 +97,7 @@ class LiveStreamer( QWidget ):
 
 		window.setLayout( mainLayout )
 		window.setWindowTitle( 'Live Streamer' )
-		window.resize( 400, 350 )
+		#~ window.resize( 400, 350 )
 		window.show()
 
 		self.messages_ui = messages
@@ -116,12 +120,16 @@ class LiveStreamer( QWidget ):
 		menu = QMenu()
 		playAction = menu.addAction( QIcon( QPixmap( fullpath( 'icons/play_16.png' ) ) ), "Watch" )
 		reloadAction = menu.addAction( QIcon( QPixmap( fullpath( 'icons/reload_16.png' ) ) ), "Reload" )
+		editAction = menu.addAction( "Edit" )
 		removeAction = menu.addAction( QIcon( QPixmap( fullpath( 'icons/remove_16.png' ) ) ), "Remove" )
 		action = menu.exec_( self.links_ui.mapToGlobal( pos ) )
 		if action == playAction:
 			self.select_stream_from_link( self.links_ui.currentItem() )
 		elif action == reloadAction:
 			self.reload_selected_link()
+		elif action == editAction:
+			self.edit_selected_link()
+			#~ self.reload_selected_link()
 		elif action == removeAction:
 			self.remove_selected_link()
 
@@ -174,17 +182,27 @@ class LiveStreamer( QWidget ):
 			urlEntry = QTableWidgetItem( url )
 			statusEntry = QTableWidgetItem( '' )
 
-			statusEntry.setTextAlignment( Qt.AlignCenter )
-
 			statusEntry.setFlags( statusEntry.flags() & ~Qt.ItemIsEditable ) # not editable
 			urlEntry.setFlags( urlEntry.flags() & ~Qt.ItemIsEditable ) # not editable
 
 			self.links_ui.setItem( nextPosition, 0, statusEntry )
+			self.links_ui.setCellWidget( nextPosition, 0, ImageWidget( fullpath( 'icons/gray_status_16.png' ), self.links_ui ) )
 			self.links_ui.setItem( nextPosition, 1, urlEntry )
 
 				# check if online
-			#~ stream = Stream( [url, quality] )
-			#~ stream.is_online( statusEntry )
+			stream = Stream( [url, quality] )
+			stream.is_online( statusEntry )
+
+
+	def edit_selected_link( self ):
+
+		selectedItem = self.links_ui.currentItem()
+		if selectedItem:
+			newUrl, ok = QInputDialog.getText( self, 'Edit Link', 'URL:', text = selectedItem.text() )
+
+			if ok:
+				selectedItem.setText( newUrl )
+				self.links_ui.setCellWidget( selectedItem.row(), 0, ImageWidget( fullpath( 'icons/gray_status_16.png' ), self.links_ui ) )
 
 
 	def remove_selected_link( self ):
@@ -202,8 +220,8 @@ class LiveStreamer( QWidget ):
 		urlItem = self.links_ui.item( self.links_ui.currentRow(), 1 )
 
 		url = urlItem.text()
-		splitUrl = url.split()
-		stream = Stream( splitUrl )
+		quality = self.qualityComboBox.currentText()
+		stream = Stream( [url, quality] )
 
 		stream.is_online( statusItem )
 
@@ -220,8 +238,8 @@ class LiveStreamer( QWidget ):
 			urlItem = self.links_ui.item( row, 1 )
 
 			url = urlItem.text()
-			splitUrl = url.split()
-			stream = Stream( splitUrl )
+			quality = self.qualityComboBox.currentText()
+			stream = Stream( [url, quality] )
 			stream.is_online( statusItem )
 
 
@@ -235,8 +253,11 @@ class LiveStreamer( QWidget ):
 		linksList = list( self.links )
 		saveJsonText = json.dumps( {
 			'quality': self.qualityComboBox.currentText(),
+			'resHeight': self.window_ui.height(),
+			'resWidth': self.window_ui.width(),
 			'urls': linksList
 		}, sort_keys=True )
+
 		with open( fullpath( 'data.txt' ), 'w', encoding= 'utf-8' ) as f:
 			f.write( saveJsonText )
 
@@ -254,15 +275,26 @@ class LiveStreamer( QWidget ):
 
 		data = json.loads( file.read() )
 		linksList = data['urls']
+
 		try:
 			quality = data['quality']
 		except KeyError:
 			quality = "Best"
+
+		try:
+			resWidth = data['resWidth']
+			resHeight = data['resHeight']
+		except KeyError:
+			resWidth = 300
+			resHeight = 350
+
 		file.close()
 
 		self.qualityComboBox.setCurrentIndex( self.qualityComboBox.findText( quality ) )
 		for link in linksList:
 			self.add_link( link )
+
+		self.window_ui.resize( resWidth, resHeight )
 
 		#~ self.check_if_online()
 
