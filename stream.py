@@ -36,7 +36,7 @@ class Stream:
 		self.arguments = arguments
 
 
-	def start( self, messageElement ):
+	def start( self, messageElement, tableWidgetItem ):
 
 		Stream.clear_streams()
 
@@ -48,8 +48,18 @@ class Stream:
 		process.setProcessChannelMode( QProcess.MergedChannels )
 		process.start( 'livestreamer', self.arguments )
 		process.readyReadStandardOutput.connect( self.show_messages )
+		process.finished.connect( lambda: self.stop( tableWidgetItem ) )
+
+		tableWidget = tableWidgetItem.tableWidget()
+		tableWidget.setCellWidget( tableWidgetItem.row(), 0, MovieWidget( fullpath( 'icons/play_16.png' ), tableWidget) )
 
 		Stream.ALL_STREAMS.append( self )
+
+
+	def stop( self, tableWidgetItem ):
+
+		tableWidget = tableWidgetItem.tableWidget()
+		tableWidget.setCellWidget( tableWidgetItem.row(), 0, MovieWidget( fullpath( 'icons/online_16.png' ), tableWidget) )
 
 
 	def is_online( self, tableWidgetItem ):

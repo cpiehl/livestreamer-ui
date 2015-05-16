@@ -6,7 +6,9 @@
 # --JSON saving more than URLs
 # --Save window size
 # --Edit entries
+# --Play icon on currently watched streams
 # Ordered save urls
+# Sort alphabetical, online first
 # Aliases
 # Stream error handling, statusbar maybe?
 #    no stream in selected quality, etc
@@ -152,7 +154,7 @@ class LiveStreamer( QWidget ):
 		print( 'Trying to open stream: {}'.format( url ) )
 
 		stream = Stream( [url, quality] )
-		stream.start( self.messages_ui )
+		stream.start( self.messages_ui, tableWidgetItem )
 
 
 	def clear_messages( self ):
@@ -191,7 +193,7 @@ class LiveStreamer( QWidget ):
 
 				# check if online
 			stream = Stream( [url, quality] )
-			stream.is_online( statusEntry )
+			#~ stream.is_online( statusEntry )
 
 
 	def edit_selected_link( self ):
