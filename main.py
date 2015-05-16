@@ -7,8 +7,13 @@
 # --Save window size
 # --Edit entries
 # --Play icon on currently watched streams
-# Ordered save urls
-# Sort alphabetical, online first
+# --Check if online ignore currently playing
+# Init one set of pixmaps, use them elsewhere
+#    revisit check if online to compare pixmaps (cacheKey?) instead of filenames
+# Ordered save urls -> sort linksList on save/load
+#    sort after add/edit/remove link
+# Sort alphabetical, online first, maybe user selectable like pidgin
+#    save sort mode in json
 # Aliases
 # Stream error handling, statusbar maybe?
 #    no stream in selected quality, etc
@@ -81,7 +86,7 @@ class LiveStreamer( QWidget ):
 		clearMessages.clicked.connect( self.clear_messages )
 		checkIfOnline.clicked.connect( self.check_if_online )
 		addLink.clicked.connect( self.add_link_dialog )
-		watchButton.clicked.connect( self.watch_button_handler )
+		watchButton.clicked.connect( lambda: self.select_stream_from_link( self.links_ui.currentItem() ) )
 
 			# set the layouts
 		mainLayout = QGridLayout()
@@ -111,10 +116,6 @@ class LiveStreamer( QWidget ):
 
 	def handle_quality_change( self, text ):
 		pass  # don't think we need this yet
-
-
-	def watch_button_handler( self ):
-		self.select_stream_from_link( self.links_ui.currentItem() )
 
 
 	def links_context_menu( self, pos ):
@@ -147,7 +148,7 @@ class LiveStreamer( QWidget ):
 	def select_stream_from_link( self, tableWidgetItem ):
 
 		row = tableWidgetItem.row()
-		urlItem = self.links_ui.item( row, 1 )  # the url is in the first column
+		urlItem = self.links_ui.item( row, 1 )
 		url = urlItem.text()
 		quality = self.qualityComboBox.currentText()
 		self.messages_ui.append( 'Trying to open stream: {}'.format( url ) )
@@ -193,7 +194,7 @@ class LiveStreamer( QWidget ):
 
 				# check if online
 			stream = Stream( [url, quality] )
-			#~ stream.is_online( statusEntry )
+			#~ stream.is_online( statusEntry ) # this one runs when adding a URL, including in the load function
 
 
 	def edit_selected_link( self ):
@@ -214,6 +215,7 @@ class LiveStreamer( QWidget ):
 			self.links.remove( selectedItem.text() )
 			currentRow = self.links_ui.currentRow()
 			self.links_ui.removeRow( currentRow )
+
 
 
 	def reload_selected_link( self ):
@@ -239,10 +241,12 @@ class LiveStreamer( QWidget ):
 			statusItem = self.links_ui.item( row, 0 )
 			urlItem = self.links_ui.item( row, 1 )
 
-			url = urlItem.text()
-			quality = self.qualityComboBox.currentText()
-			stream = Stream( [url, quality] )
-			stream.is_online( statusItem )
+			if 'icons/play_16.png' not in self.links_ui.cellWidget( row, 0 ).filename():
+
+				url = urlItem.text()
+				quality = self.qualityComboBox.currentText()
+				stream = Stream( [url, quality] )
+				stream.is_online( statusItem )
 
 
 	def save( self ):
@@ -292,13 +296,13 @@ class LiveStreamer( QWidget ):
 
 		file.close()
 
+		self.window_ui.resize( resWidth, resHeight )
+
 		self.qualityComboBox.setCurrentIndex( self.qualityComboBox.findText( quality ) )
 		for link in linksList:
 			self.add_link( link )
 
-		self.window_ui.resize( resWidth, resHeight )
-
-		#~ self.check_if_online()
+		#~ self.check_if_online() # this one runs at startup
 
 
 if __name__ == '__main__':
