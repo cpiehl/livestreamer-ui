@@ -5,7 +5,7 @@ LiveStreamer Ui
 A front-end program for [livestreamer](https://github.com/chrippa/livestreamer "livestreamer").
 
 
-You can save links of your favorite streams, and check when they're available. Its also easier to open multiple streams, just double-click on the links (or run the command).
+You can save links of your favorite streams, and check when they're available. Its also easier to open multiple streams, just double-click on the links.
 
 
 Dependencies
