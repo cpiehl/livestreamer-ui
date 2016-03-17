@@ -7,7 +7,7 @@ A front-end program for [livestreamer](https://github.com/chrippa/livestreamer "
 
 You can save links of your favorite streams, and check when they're available. Its also easier to open multiple streams, just double-click on the links.
 
-![screenshot](https://i.imgur.com/l0in2GO.gif)
+![screenshot](https://i.imgur.com/45qAclc.png)
 
 
 Dependencies
